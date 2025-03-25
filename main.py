@@ -150,6 +150,45 @@ def add_job():
     return render_template('add_job.html', form=form)
 
 
+@app.route('/edit_job/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_job(id):
+    db_sess = db_session.create_session()
+    job = db_sess.query(Jobs).join(User).filter(Jobs.id == id).first()
+    if not job or (current_user.id != job.team_leader and current_user.id != 1):
+        db_sess.close()
+        abort(403)
+    form = JobForm()
+    if form.validate_on_submit():
+        try:
+            if str(job.team_leader) != form.team_leader.data:
+                new_leader = db_sess.get(User, int(form.team_leader.data))
+                if not new_leader:
+                    raise ValueError("Руководитель не найден")
+
+            job.job = form.job.data
+            job.team_leader = int(form.team_leader.data)
+            job.work_size = form.work_size.data
+            job.collaborators = form.collaborators.data
+            job.is_finished = form.is_finished.data
+
+            db_sess.commit()
+            return redirect(url_for('index'))
+        except Exception as e:
+            print(e)
+        db_sess.close()
+
+    elif request.method == 'GET':
+        form.job.data = job.job
+        form.team_leader.data = str(job.team_leader)
+        form.work_size.data = job.work_size
+        form.collaborators.data = job.collaborators
+        form.is_finished.data = job.is_finished
+
+    db_sess.close()
+    return render_template('add_job.html', form=form, title='Редактирование работы')
+
+
 @app.route('/')
 def index():
     db_sess = db_session.create_session()
