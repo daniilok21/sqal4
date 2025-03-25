@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <p>И на Марсе будут яблони цвести!</p>
+
+    <h2 style="text-align: center;">Works log</h2>
+
+    {% for job in jobs %}
+        <h3>Action # {{ job.id }}</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Title of activity</th>
+                    <th>Team leader</th>
+                    <th>Duration</th>
+                    <th>List of collaborators</th>
+                    <th>Is finished</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ job.job }}</td>
+                    <td>{{ job.user.surname }} {{ job.user.name }}</td>
+                    <td>{{ job.work_size }} hours</td>
+                    <td>{{ job.collaborators }}</td>
+                    <td class="is-finished">{{ "Is finished" if job.is_finished else "Is not finished" }}</td>
+                </tr>
+            </tbody>
+        </table>
+    {% endfor %}
+{% endblock %}
