@@ -1,9 +1,10 @@
-from flask import Flask, render_template, redirect, request, abort
+from flask import Flask, render_template, redirect, request, abort, url_for
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from data import db_session
 from data.jobs import Jobs
 from data.users import User
 from data.news import News
+from forms.job import JobForm
 from forms.user import RegisterForm, LoginForm
 from forms.news import NewsForm
 
@@ -122,13 +123,42 @@ def news_delete(id):
     return redirect('/')
 
 
+@app.route('/add_job', methods=['GET', 'POST'])
+@login_required
+def add_job():
+    form = JobForm()
+
+    if form.validate_on_submit():
+        db_sess = db_session.create_session()
+        try:
+            leader = db_sess.get(User, int(form.team_leader.data))
+            if not leader:
+                raise ValueError("Руководитель не найден")
+            job = Jobs(
+                job=form.job.data,
+                team_leader=int(form.team_leader.data),
+                work_size=form.work_size.data,
+                collaborators=form.collaborators.data,
+                is_finished=form.is_finished.data
+            )
+            db_sess.add(job)
+            db_sess.commit()
+            return redirect(url_for('index'))
+        except Exception as e:
+            print(e)
+        db_sess.close()
+    return render_template('add_job.html', form=form)
+
+
 @app.route('/')
 def index():
     db_sess = db_session.create_session()
-
-    jobs = db_sess.query(Jobs).join(User, Jobs.team_leader == User.id).all()
-
-    return render_template("jobs.html", jobs=jobs)
+    try:
+        jobs = db_sess.query(Jobs).join(User).all()
+        return render_template("jobs.html", jobs=jobs)
+    except Exception as e:
+        print(e)
+    db_sess.close()
 
 
 if __name__ == '__main__':
