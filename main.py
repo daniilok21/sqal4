@@ -1,6 +1,7 @@
 from flask import Flask, render_template, redirect, request, abort
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from data import db_session
+from data.jobs import Jobs
 from data.users import User
 from data.news import News
 from forms.user import RegisterForm, LoginForm
@@ -124,11 +125,10 @@ def news_delete(id):
 @app.route('/')
 def index():
     db_sess = db_session.create_session()
-    if current_user.is_authenticated:
-        news = db_sess.query(News).filter((News.user == current_user) | (News.is_private == False))
-    else:
-        news = db_sess.query(News).filter(News.is_private == False)
-    return render_template("index.html", news=news)
+
+    jobs = db_sess.query(Jobs).join(User, Jobs.team_leader == User.id).all()
+
+    return render_template("jobs.html", jobs=jobs)
 
 
 if __name__ == '__main__':
